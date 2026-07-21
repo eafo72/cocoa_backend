@@ -1,0 +1,41 @@
+.content {
+    background-color: rgb(242 246 252);
+    margin: 0 auto;
+    width: 80%;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.content .content-head {
+    width: 90%;
+}
+
+.content-body {
+    min-width: 700px;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+}
+
+.content-body .title {
+    padding-left: 1rem;
+    margin-bottom: 2rem;
+    font-size: large;
+}
+
+.content-foot {
+    text-align: center;
+    font-style: italic;
+    width: 70%;
+    padding: 0 3rem;
+    border-top: 1px solid rgb(121 251 191);
+}
+
+.item {
+    display: flex;
+    align-items: center;
+}
+.item img{
+    margin-right: .5rem;
+}

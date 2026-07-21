@@ -1,0 +1,207 @@
+// generarEmail.js (Versión FINAL con Fecha/Hora agrupada y ID de Reservación)
+
+module.exports = function generarEmail(data) {
+  // Datos de marca
+  const COLOR_ROJO = '#a01e24';   // Museo Red oficial
+  const COLOR_NEUTRO = '#1D1A14'; // Museo Neutral (Texto) oficial
+  const COLOR_FONDO = '#FFFFFF';  // Fondo blanco
+  const URL_RESERVACIONES = 'https://boleto.museocasakahlo.org/'; // URL para ver reservaciones
+
+  /*
+  <p style="margin: 5px 0 0 23px; font-size: 14px;">
+    <a href="#" style="color: #1976d2; text-decoration: underline;">Agregar al Calendario de Google</a>
+  </p>
+  */
+
+  // Función de utilidad para aplicar estilo de texto
+  const styleText = (color = COLOR_NEUTRO, weight = 'normal', size = '16px') =>
+    `font-family: Arial, sans-serif; color: ${color}; font-weight: ${weight}; font-size: ${size}; line-height: 1.5;`;
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8" />
+        <title>Order confirmation - Casa Kahlo Museum!</title>
+      </head>
+      <body style="margin:0; padding:0; background-color:${COLOR_FONDO};">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="margin:auto; background-color: ${COLOR_FONDO};">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: ${COLOR_FONDO}; border-collapse: collapse;">
+                
+                <tr>
+                  <td align="center" style="padding: 20px 40px 0 40px;">
+                    <h1 style="${styleText(COLOR_ROJO, 'bolder', '40px')} text-transform: uppercase; margin: 0 0 5px 0; letter-spacing: 2px;">
+                      MUSEO CASA KAHLO
+                    </h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding: 5px 40px 20px 40px;">
+                    <h2 style="${styleText(COLOR_ROJO, 'bold', '24px')} text-transform: uppercase; margin: 0;">YOU HAVE PURCHASED YOUR TICKETS FOR</h2>
+                    <h2 style="${styleText(COLOR_ROJO, 'bold', '24px')} text-transform: uppercase; margin: 0;">CASA KAHLO MUSEUM!</h2>
+                  </td>
+                </tr>
+                
+                <tr>
+                  <td align="center" style="padding:0 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background-color: ${COLOR_ROJO}; color: ${COLOR_FONDO}; font-weight: bold; font-size: 18px; padding: 10px; text-align: center; font-family: Arial, sans-serif;">
+                          Order summary
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                
+                <tr>
+                  <td style="padding: 20px 40px 10px 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="${styleText()}">
+                      <tr>
+                        <td width="50%" style="padding-bottom: 5px;">
+                          You have purchased <b style="color:${COLOR_ROJO};">${data.boletos}</b> ticket for:
+                        </td>
+                        <td width="50%" style="padding-bottom: 5px; text-align: right; font-weight: bold; line-height: 1.3;">
+                          ${data.fecha}
+                          <br>${data.horario}
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <div style="margin:10px 0;">
+                      ${data.tablaBoletos}
+                    </div>
+
+                    <p style="${styleText()} font-size: 14px; text-align: right; margin-top: 10px; margin-bottom: 0;">
+                        <span style="font-weight: bold; color: ${COLOR_NEUTRO};">Number of reservation:</span> ${data.idReservacion || 'N/A'}
+                    </p>
+
+                    ${data.password
+                    ? `<p style="${styleText()} font-size: 14px; text-align: right; margin-top: 10px; margin-bottom: 0;">
+                              <span style="font-weight: bold; color: ${COLOR_NEUTRO};">Your temporary password:</span> ${data.password}
+                      </p>`
+                    : ''
+                    }
+
+
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="center" style="padding:10px 40px 0 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background-color: ${COLOR_ROJO}; color: ${COLOR_FONDO}; font-weight: bold; font-size: 18px; padding: 10px; text-align: center; font-family: Arial, sans-serif;">
+                          Your tickets
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                
+                <tr>
+                  <td style="padding: 20px 40px 10px 40px; text-align: center;">
+                    <p style="${styleText(COLOR_NEUTRO, 'normal', '15px')} margin-bottom: 15px;">
+                     To enter the museum, present your QR code on your mobile device or on a printed copy.
+                    </p>
+                    <div style="margin:20px 0;">
+                      <img src="cid:qrImage" alt="Código QR" style="width:140px; height:140px; border: 1px solid #ccc;" />
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding: 0 40px 20px 40px;">
+                    <hr style="border: 0; border-top: 1px solid #ccc; width: 100%; margin: 10px 0;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="${styleText()}">
+                      <tr>
+                        <td width="50%" align="left" style="padding: 10px 0; vertical-align: top; border-right: 1px solid #ffffff00;">
+                          <p style="margin: 0; ${styleText(COLOR_NEUTRO, 'normal', '15px')} line-height: 1.3;">
+                            <span style="font-weight: bold; color: ${COLOR_NEUTRO};">${data.direccion || 'Aguayo 54, Del Carmen, Coyoacán,'}</span>
+                            <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;04100, CDMX
+                          </p>
+                          <p style="margin: 5px 0 0 23px; font-size: 14px;">
+                            <a href="${data.ubicacionUrl}" style="color: #1976d2; text-decoration: underline;">View on Google Maps</a>
+                          </p>
+                        </td>
+                        
+                        <td width="50%" align="left" style="padding: 10px 0; vertical-align: top; padding-left: 20px;">
+                          <p style="margin: 0; ${styleText(COLOR_NEUTRO, 'normal', '15px')} line-height: 1.3;">
+                            <span style="font-weight: bold; color: ${COLOR_NEUTRO};">${data.fecha}</span>
+                            <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${data.horario}
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    <hr style="border: 0; border-top: 1px solid #ccc; width: 100%; margin: 10px 0;">
+                  </td>
+                </tr>
+
+                <tr>
+                    <td align="center" style="padding: 0 40px 20px 40px;">
+                        <p style="${styleText()} text-align: center; margin: 0;">
+                            To view your reservations, you can log in to <a href="${URL_RESERVACIONES}" style="color: ${COLOR_ROJO}; font-weight: bold; text-decoration: underline;">your account</a>.
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                  <td align="center" style="padding:10px 40px 0 40px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background-color: ${COLOR_ROJO}; color: ${COLOR_FONDO}; font-weight: bold; font-size: 18px; padding: 10px; text-align: center; font-family: Arial, sans-serif;">
+                          Before your visit
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                
+                <tr>
+                  <td style="padding: 20px 40px 20px 40px; text-align: left;">
+                    <p style="${styleText()} margin-bottom: 15px;">
+                      Please note that there is NO tolerance. In case you arrive late, we may add you to the current group or reschedule your visit for the next available tour, based on availability.
+                    </p>
+                    <p style="${styleText()} margin-bottom: 15px;">
+                      If you have purchased a reduced-price ticket, please present a valid ID card proving your eligibility upon arrival.
+                    </p>
+                    <p style="${styleText()} margin-bottom: 15px;">
+                      Please note that your digital ticket is your admission to the tour. Any reproduction of your ticket is strictly prohibited. Please consult the <a href="https://boleto.museocasakahlo.org/pages/terminos.html" target="_blank" style="color: #1976d2; text-decoration: underline;">terms and conditions of the digital ticket.</a>.
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td align="center" style="padding: 10px 40px;">
+                    <p style="${styleText(COLOR_ROJO, 'bold', '18px')} text-transform: uppercase; margin: 0 0 10px 0;">
+                      MORE LOVE, MORE FAMILY, MORE MEXICO
+                    </p>
+                    <hr style="border: 0; border-top: 1px solid #ccc; width: 80%; margin: 10px auto;">
+                  </td>
+                </tr>
+                
+                <tr>
+                  <td align="center" style="padding: 10px 40px 20px 40px;">
+                    <p style="${styleText('12px')} margin: 0 0 10px 0;">
+                      Please do not reply to this email. If you have further questions, please send an email to <a href="mailto:contacto@museocasakahlo.org" style="color: #1976d2; text-decoration: underline;">contacto@museocasakahlo.org</a>
+                    </p>
+                    <p style="font-size: 12px; color: ${COLOR_NEUTRO}; margin: 0;">
+                      <a href="https://boleto.museocasakahlo.org/pages/terminos.html" target="_blank" style="color: #1976d2; text-decoration: underline; margin: 0 5px;">Terms and Conditions</a> | 
+                      <a href="https://boleto.museocasakahlo.org/pages/aviso-privacidad.html" target="_blank" style="color: #1976d2; text-decoration: underline; margin: 0 5px;">Privacy Policy</a>
+                    </p>
+                    <p style="font-size: 12px; color: #999; margin: 10px 0 0 0;">
+                      ©Copyright 2025 Museo Casa Kahlo
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+};
