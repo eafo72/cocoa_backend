@@ -234,8 +234,8 @@ const placesMedanoRouter = require('./src/routes/placesMedano');
 const eventosEspecialesRoutes = require('./src/routes/eventos_especiales');
 const preciosRoutes = require('./src/routes/precios');
 
-const fotografiasModule = require('./src/routes/fotografias');
-const fotografiasRoutes = fotografiasModule.router;
+//const fotografiasModule = require('./src/routes/fotografias');
+//const fotografiasRoutes = fotografiasModule.router;
 const mailRoutes = require('./src/routes/mail')
 
 app.use('/usuario', userRoutes)
@@ -254,7 +254,7 @@ app.use('/venta', ventaRoutes)
 app.use('/getyourguide', getYourGuideRoutes)
 app.use('/1', getYourGuideRoutes)
 app.use('/photos', photosRoutes)
-app.use('/fotografias', fotografiasRoutes)
+//app.use('/fotografias', fotografiasRoutes)
 app.use('/mail', mailRoutes)
 app.use('/camara', camaraRoutes)
 app.use('/places', placesRoutes)
