@@ -179,6 +179,73 @@ app.get('/promocionales', async (req, res) => {
     }
 });
 
+app.post('/crear', async (req, res) => {
+    try {
+        const { clave, nombre, precio, contexto = 'museo_general', price_id = null, activo = 1, tour_id } = req.body;
+        const errors = [];
+
+        const precioNumero = Number(precio);
+        const tourId = Number(tour_id);
+
+        if (!clave || !String(clave).trim()) {
+            errors.push({ msg: 'El campo clave debe de contener un valor' });
+        }
+
+        if (!nombre || !String(nombre).trim()) {
+            errors.push({ msg: 'El campo nombre debe de contener un valor' });
+        }
+
+        if (!Number.isFinite(precioNumero) || precioNumero < 0) {
+            errors.push({ msg: 'El campo precio debe ser un número válido mayor o igual a 0' });
+        }
+
+        if (!Number.isInteger(tourId) || tourId <= 0) {
+            errors.push({ msg: 'El campo tour_id debe de contener un valor válido' });
+        }
+
+        if (errors.length >= 1) {
+            return res.status(400).json({
+                msg: 'Errores en los parametros',
+                error: true,
+                details: errors
+            });
+        }
+
+        const [tourRows] = await db.pool.query('SELECT id FROM tour WHERE id = ?', [tourId]);
+        if (tourRows.length === 0) {
+            return res.status(404).json({ msg: 'Tour no encontrado', error: true });
+        }
+
+        const claveNormalizada = String(clave).trim();
+        const nombreNormalizado = String(nombre).trim();
+        const contextoNormalizado = String(contexto).trim() || 'museo_general';
+        const [duplicadoRows] = await db.pool.query(
+            'SELECT id FROM precios WHERE tour_id = ? AND contexto = ? AND clave = ? LIMIT 1',
+            [tourId, contextoNormalizado, claveNormalizada]
+        );
+
+        if (duplicadoRows.length > 0) {
+            return res.status(409).json({ msg: 'Ya existe un precio con esa clave para este tour y contexto', error: true });
+        }
+
+        const fecha = getFechaActual();
+        const [result] = await db.pool.query(
+            `INSERT INTO precios
+                (clave, nombre, precio, price_id, contexto, tour_id, activo, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [claveNormalizada, nombreNormalizado, precioNumero, price_id || null, contextoNormalizado, tourId, activo ? 1 : 0, fecha, fecha]
+        );
+
+        return res.status(201).json({
+            error: false,
+            msg: 'Precio creado con exito',
+            id: result.insertId
+        });
+    } catch (error) {
+        return res.status(400).json({ error: true, details: error.message });
+    }
+});
+
 app.post('/promocionales', async (req, res) => {
     try {
         const { precio_id, precio_promocional, fecha_inicio_promo, fecha_fin_promo, activo = 1 } = req.body;
