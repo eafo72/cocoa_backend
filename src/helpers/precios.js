@@ -26,12 +26,9 @@ const resolveTourId = async (tourIdOrViajeTourId) => {
         return null;
     }
 
-    const [precioRows] = await db.pool.query(
-        'SELECT 1 AS found FROM precios WHERE tour_id = ? LIMIT 1',
-        [candidate]
-    );
+    const [tourRows] = await db.pool.query('SELECT id FROM tour WHERE id = ? LIMIT 1', [candidate]);
 
-    if (precioRows.length > 0) {
+    if (tourRows.length > 0) {
         return candidate;
     }
 
@@ -67,6 +64,12 @@ const getCatalogoPreciosPorContexto = async (contexto, fechaSolicitada, tourIdOr
     }
 
     const tourId = await resolveTourId(tourIdOrViajeTourId);
+    const hasTourContext = tourIdOrViajeTourId !== null && tourIdOrViajeTourId !== undefined && String(tourIdOrViajeTourId).trim() !== '';
+
+    if (hasTourContext && !tourId) {
+        return [];
+    }
+
     const tourFilterSql = tourId ? ' AND p.tour_id = ?' : '';
 
     const [rows] = await db.pool.query(
@@ -110,6 +113,12 @@ const getPreciosPorContexto = async (contexto, tiposBoletos, fechaSolicitada, to
     }
 
     const tourId = await resolveTourId(tourIdOrViajeTourId);
+    const hasTourContext = tourIdOrViajeTourId !== null && tourIdOrViajeTourId !== undefined && String(tourIdOrViajeTourId).trim() !== '';
+
+    if (hasTourContext && !tourId) {
+        return {};
+    }
+
     const placeholders = claves.map(() => '?').join(', ');
     const tourFilterSql = tourId ? ' AND p.tour_id = ?' : '';
     const [rows] = await db.pool.query(

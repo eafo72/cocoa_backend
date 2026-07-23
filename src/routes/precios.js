@@ -27,7 +27,12 @@ const PROMO_JOIN_SQL = `
 app.get('/precios', async (req, res) => {
     try {
         const { contexto, fecha, tour_id } = req.query;
+        const hasTourParam = tour_id !== undefined && tour_id !== null && String(tour_id).trim() !== '';
         const tourId = await resolveTourId(tour_id);
+
+        if (hasTourParam && !tourId) {
+            return res.status(200).json([]);
+        }
 
         if (fecha) {
             const fechaConsulta = parseFechaSolicitada(fecha);
