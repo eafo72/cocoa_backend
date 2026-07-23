@@ -218,9 +218,6 @@ app.post('/crear', imageController.upload, async (req, res) => {
         if (!titulo) {
             errors.push({ msg: "El campo titulo debe de contener un valor" });
         }
-        if (!precio_pp) {
-            errors.push({ msg: "El campo precio_pp debe de contener un valor" });
-        }
         if (!descripcion_corta) {
             errors.push({ msg: "El campo descripcion_corta debe de contener un valor" });
         }
@@ -296,6 +293,10 @@ app.post('/crear', imageController.upload, async (req, res) => {
         let date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
         let time = today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds();
         let fecha = date + ' ' + time;
+        let precioPorPersona = Number(precio_pp);
+        if (!Number.isFinite(precioPorPersona) || precioPorPersona < 0) {
+            precioPorPersona = 0;
+        }
 
         let tituloImage = `${date}-${req.files[0].originalname}`;
         let thumb = `${process.env.URLFRONT}/images/tours/${tituloImage}`;
@@ -337,7 +338,7 @@ app.post('/crear', imageController.upload, async (req, res) => {
         let query = `INSERT INTO tour 
                         (nombre, titulo, thumb, precio_pp, descripcion_corta, descripcion, de_que_va, conocer_mas, recomendaciones, punto_encuentro, fechas_no_disponibles, guias, max_pasajeros, min_pasajeros, created_at, updated_at, empresa_id, categoria_id, ciudad, estado, duracion) 
                         VALUES 
-                        ('${nombre}', '${titulo}', '${thumb}', '${precio_pp}', '${descripcion_corta}', '${descripcion}', '${de_que_va}', '${conocer_mas}', '${recomendaciones}', '${punto_encuentro}', '${fechas}', '${guiasTour}', '${max_pasajeros}', '${min_pasajeros}', '${fecha}', '${fecha}', '${empresa_id}', '${categoria_id}', '${ciudad}', '${estado}', '${duracion}')`;
+                        ('${nombre}', '${titulo}', '${thumb}', '${precioPorPersona}', '${descripcion_corta}', '${descripcion}', '${de_que_va}', '${conocer_mas}', '${recomendaciones}', '${punto_encuentro}', '${fechas}', '${guiasTour}', '${max_pasajeros}', '${min_pasajeros}', '${fecha}', '${fecha}', '${empresa_id}', '${categoria_id}', '${ciudad}', '${estado}', '${duracion}')`;
 
         result = await db.pool.query(query);
         result = result[0];
@@ -367,7 +368,7 @@ app.post('/crear', imageController.upload, async (req, res) => {
 
 app.put('/set', imageController.upload, async (req, res) => {
     try {
-        let { id, nombre, titulo, precio_pp, descripcion_corta, descripcion, de_que_va, conocer_mas, recomendaciones, punto_encuentro, fechas_no_disponibles, fechashorarios_no_disponibles, guias, max_pasajeros, min_pasajeros, empresa_id, categoria_id, dias, ciudad, estado, duracion } = req.body
+        let { id, nombre, titulo, descripcion_corta, descripcion, de_que_va, conocer_mas, recomendaciones, punto_encuentro, fechas_no_disponibles, fechashorarios_no_disponibles, guias, max_pasajeros, min_pasajeros, empresa_id, categoria_id, dias, ciudad, estado, duracion } = req.body
 
         let errors = Array();
 
@@ -379,9 +380,6 @@ app.put('/set', imageController.upload, async (req, res) => {
         }
         if (!titulo) {
             errors.push({ msg: "El campo titulo debe de contener un valor" });
-        }
-        if (!precio_pp) {
-            errors.push({ msg: "El campo precio_pp debe de contener un valor" });
         }
         if (!descripcion_corta) {
             errors.push({ msg: "El campo descripcion_corta debe de contener un valor" });
@@ -503,8 +501,7 @@ app.put('/set', imageController.upload, async (req, res) => {
 
         }
 
-        query += `precio_pp            = '${precio_pp}', 
-                    descripcion_corta = '${descripcion_corta}', 
+        query += `descripcion_corta = '${descripcion_corta}', 
                     descripcion       = '${descripcion}', 
                     de_que_va         = '${de_que_va}', 
                     conocer_mas       = '${conocer_mas}', 
