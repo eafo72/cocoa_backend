@@ -19,32 +19,65 @@ const parseFechaSolicitada = (fecha) => {
     return match[1];
 };
 
+const resolveTourId = async (tourIdOrViajeTourId) => {
+    const candidate = Number(tourIdOrViajeTourId);
+
+    if (!Number.isInteger(candidate) || candidate <= 0) {
+        return null;
+    }
+
+    const [precioRows] = await db.pool.query(
+        'SELECT 1 AS found FROM precios WHERE tour_id = ? LIMIT 1',
+        [candidate]
+    );
+
+    if (precioRows.length > 0) {
+        return candidate;
+    }
+
+    const [viajeRows] = await db.pool.query(
+        'SELECT tour_id FROM viajeTour WHERE id = ? LIMIT 1',
+        [candidate]
+    );
+
+    if (viajeRows.length === 0) {
+        return null;
+    }
+
+    const resolvedTourId = Number(viajeRows[0].tour_id);
+    return Number.isInteger(resolvedTourId) && resolvedTourId > 0 ? resolvedTourId : null;
+};
+
 const PROMO_JOIN_SQL = `
     LEFT JOIN precios_promocionales pp ON pp.id = (
         SELECT id FROM precios_promocionales
         WHERE precio_id = p.id AND activo = 1
+            AND tour_id = p.tour_id
             AND ? BETWEEN fecha_inicio_promo AND fecha_fin_promo
         ORDER BY fecha_inicio_promo DESC, id DESC
         LIMIT 1
     )
 `;
 
-const getCatalogoPreciosPorContexto = async (contexto, fechaSolicitada) => {
+const getCatalogoPreciosPorContexto = async (contexto, fechaSolicitada, tourIdOrViajeTourId = null) => {
     const fecha = parseFechaSolicitada(fechaSolicitada);
 
     if (!fecha) {
         throw new Error('Formato de fecha inválido. Use YYYY-MM-DD');
     }
 
+    const tourId = await resolveTourId(tourIdOrViajeTourId);
+    const tourFilterSql = tourId ? ' AND p.tour_id = ?' : '';
+
     const [rows] = await db.pool.query(
-        `SELECT p.id, p.clave, p.nombre, p.precio AS precio_base, p.price_id, p.contexto,
+        `SELECT p.id, p.clave, p.nombre, p.precio AS precio_base, p.price_id, p.contexto, p.tour_id,
                 pp.id AS promo_id, pp.precio_promocional, pp.fecha_inicio_promo, pp.fecha_fin_promo,
                 COALESCE(pp.precio_promocional, p.precio) AS precio
          FROM precios p
          ${PROMO_JOIN_SQL}
-         WHERE p.contexto = ? AND p.activo = 1
+         WHERE p.contexto = ? AND p.activo = 1${tourFilterSql}
          ORDER BY p.clave`,
-        [fecha, contexto]
+        tourId ? [fecha, contexto, tourId] : [fecha, contexto]
     );
 
     return rows.map((row) => ({
@@ -55,6 +88,7 @@ const getCatalogoPreciosPorContexto = async (contexto, fechaSolicitada) => {
         precio: Number(row.precio) || 0,
         price_id: row.price_id,
         contexto: row.contexto,
+        tour_id: row.tour_id,
         es_promocional: row.promo_id != null,
         promo_id: row.promo_id,
         fecha_inicio_promo: row.fecha_inicio_promo,
@@ -62,7 +96,7 @@ const getCatalogoPreciosPorContexto = async (contexto, fechaSolicitada) => {
     }));
 };
 
-const getPreciosPorContexto = async (contexto, tiposBoletos, fechaSolicitada) => {
+const getPreciosPorContexto = async (contexto, tiposBoletos, fechaSolicitada, tourIdOrViajeTourId = null) => {
     const claves = [...new Set(Object.keys(tiposBoletos || {}).map((clave) => String(clave).trim()).filter(Boolean))];
 
     if (claves.length === 0) {
@@ -75,14 +109,16 @@ const getPreciosPorContexto = async (contexto, tiposBoletos, fechaSolicitada) =>
         throw new Error('Formato de fecha inválido. Use YYYY-MM-DD');
     }
 
+    const tourId = await resolveTourId(tourIdOrViajeTourId);
     const placeholders = claves.map(() => '?').join(', ');
+    const tourFilterSql = tourId ? ' AND p.tour_id = ?' : '';
     const [rows] = await db.pool.query(
-        `SELECT p.clave, p.precio AS precio_base,
+        `SELECT p.clave, p.precio AS precio_base, p.tour_id,
                 COALESCE(pp.precio_promocional, p.precio) AS precio
          FROM precios p
          ${PROMO_JOIN_SQL}
-         WHERE p.contexto = ? AND p.activo = 1 AND p.clave IN (${placeholders})`,
-        [fecha, contexto, ...claves]
+         WHERE p.contexto = ? AND p.activo = 1${tourFilterSql} AND p.clave IN (${placeholders})`,
+        tourId ? [fecha, contexto, tourId, ...claves] : [fecha, contexto, ...claves]
     );
 
     const precios = rows.reduce((acc, row) => {
@@ -102,5 +138,6 @@ module.exports = {
     getFechaHoyMexico,
     parseFechaSolicitada,
     getCatalogoPreciosPorContexto,
-    getPreciosPorContexto
+    getPreciosPorContexto,
+    resolveTourId
 };

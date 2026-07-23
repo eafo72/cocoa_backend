@@ -188,8 +188,8 @@ function contarBoletos(tiposBoletos) {
     return Object.values(tiposBoletos).reduce((total, cantidad) => total + (Number(cantidad) || 0), 0);
 }
 
-async function calcularTotalTiposBoletos(tiposBoletos, fechaSolicitada) {
-    const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fechaSolicitada);
+async function calcularTotalTiposBoletos(tiposBoletos, fechaSolicitada, tourId = null) {
+    const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fechaSolicitada, tourId);
 
     return Object.entries(tiposBoletos).reduce((total, [tipo, cantidad]) => {
         const subtotal = (Number(precios[tipo]) || 0) * (Number(cantidad) || 0);
@@ -649,7 +649,7 @@ async function crearReservacionGetYourGuide(payload) {
         const horaNormalizada = normalizarHora(horaCompleta);
         const tiposBoletos = parseTiposBoletos(tipos_boletos, no_boletos);
         const boletos = Number(no_boletos) || contarBoletos(tiposBoletos);
-        const totalCalculado = Number(total) || await calcularTotalTiposBoletos(tiposBoletos, fecha_ida);
+        const totalCalculado = Number(total) || await calcularTotalTiposBoletos(tiposBoletos, fecha_ida, tourId);
 
         await validarDiaPermitido(fecha_ida, tourId);
 
@@ -1087,12 +1087,13 @@ app.post('/availability', handleAvailabilityRequest);
 
 async function handlePrices(req, res) {
     try {
-        const { tipos_boletos, no_boletos, fecha, fecha_ida } = req.body;
+        const { tipos_boletos, no_boletos, fecha, fecha_ida, tour_id, tourId } = req.body;
         const tiposBoletos = parseTiposBoletos(tipos_boletos, no_boletos);
         const fechaConsulta = fecha || fecha_ida;
+        const tourContextId = tour_id || tourId || null;
         const totalBoletos = contarBoletos(tiposBoletos);
-        const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fechaConsulta);
-        const total = await calcularTotalTiposBoletos(tiposBoletos, fechaConsulta);
+        const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fechaConsulta, tourContextId);
+        const total = await calcularTotalTiposBoletos(tiposBoletos, fechaConsulta, tourContextId);
         const breakdown = Object.entries(tiposBoletos)
             .filter(([, cantidad]) => Number(cantidad) > 0)
             .map(([tipo, cantidad]) => ({

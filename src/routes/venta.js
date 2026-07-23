@@ -466,7 +466,7 @@ const mapTiposBoletosConPrecios = (tiposBoletos, nombres, precios) => Object.ent
 
 app.get('/precios/museo-general', async (req, res) => {
     try {
-        const { fecha } = req.query;
+        const { fecha, tour_id } = req.query;
 
         if (!fecha) {
             return res.status(400).json({
@@ -483,10 +483,11 @@ app.get('/precios/museo-general', async (req, res) => {
             });
         }
 
-        const precios = await getCatalogoPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, fechaConsulta);
+        const precios = await getCatalogoPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, fechaConsulta, tour_id);
         return res.status(200).json({
             error: false,
             fecha_consultada: fechaConsulta,
+            tour_id: Number(tour_id) || null,
             data: precios
         });
     } catch (error) {
@@ -694,7 +695,7 @@ const handleSuccessfulPayment = async (session) => {
         const tiposBoletos = parseTiposBoletos(tipos_boletos, no_boletos, isEventoEspecial ? 'tipo_evento' : 'tipoA');
         const precios = isEventoEspecial
             ? null
-            : await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fecha_ida_original);
+            : await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fecha_ida_original, viajeTourId);
 
         let tiposBoletosArray = isEventoEspecial
             ? await getEventoEspecialBoletos(eventoId, tiposBoletos)
@@ -2056,7 +2057,7 @@ app.post('/crear-admin', async (req, res) => {
         }
 
         // 
-        const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fecha_ida);
+        const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fecha_ida, viajeTourId);
 
         // 
         const nombres = {
@@ -2773,7 +2774,7 @@ app.post('/crear-admin-cortesia', async (req, res) => {
         }
 
         // 
-        const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fecha_ida);
+        const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fecha_ida, viajeTourId);
 
         // 
         const nombres = {
@@ -5747,7 +5748,7 @@ async function enviarCorreoBoletoAsignado(boletoInfo) {
         // Generar un solo código QR para la reservación
         const qrCodeBuffer = await generateQRCode(id_reservacion);
 
-        const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fecha);
+        const precios = await getPreciosPorContexto(CONTEXTO_PRECIO_MUSEO, tiposBoletos, fecha, viajeTourId);
 
         let tiposBoletosArray = mapTiposBoletosConPrecios(tiposBoletos, t.ticketTypes, precios);
 
