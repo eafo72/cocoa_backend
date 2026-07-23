@@ -246,6 +246,42 @@ app.post('/crear', async (req, res) => {
     }
 });
 
+app.delete('/borrar/:id', async (req, res) => {
+    try {
+        const precioId = Number(req.params.id);
+
+        if (!Number.isInteger(precioId) || precioId <= 0) {
+            return res.status(400).json({ msg: 'Id inválido', error: true });
+        }
+
+        const [precioRows] = await db.pool.query('SELECT id FROM precios WHERE id = ? LIMIT 1', [precioId]);
+        if (precioRows.length === 0) {
+            return res.status(404).json({ msg: 'Precio no encontrado', error: true });
+        }
+
+        await db.pool.query('START TRANSACTION');
+
+        try {
+            await db.pool.query('DELETE FROM precios_promocionales WHERE precio_id = ?', [precioId]);
+
+            const [result] = await db.pool.query('DELETE FROM precios WHERE id = ?', [precioId]);
+
+            if (result.affectedRows === 0) {
+                await db.pool.query('ROLLBACK');
+                return res.status(404).json({ msg: 'Precio no encontrado', error: true });
+            }
+
+            await db.pool.query('COMMIT');
+            return res.status(200).json({ error: false, msg: 'Precio eliminado con exito' });
+        } catch (error) {
+            await db.pool.query('ROLLBACK');
+            throw error;
+        }
+    } catch (error) {
+        return res.status(400).json({ error: true, details: error.message });
+    }
+});
+
 app.post('/promocionales', async (req, res) => {
     try {
         const { precio_id, precio_promocional, fecha_inicio_promo, fecha_fin_promo, activo = 1 } = req.body;
