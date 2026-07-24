@@ -6327,7 +6327,10 @@ app.post('/stripe/cancelar-compra', async (req, res) => {
             console.log('No se encontró la venta');
             await connection.rollback();
             connection.release();
-            return;
+            return res.status(404).json({
+                error: true,
+                msg: 'No se encontró una compra asociada a esa sesión.'
+            });
         }
 
         const id_reservacion = rows[0].id_reservacion;
@@ -6373,7 +6376,11 @@ app.post('/stripe/cancelar-compra', async (req, res) => {
             console.log('Boletos ya devueltos');
             await connection.rollback();
             connection.release();
-            return;
+            return res.status(200).json({
+                error: false,
+                alreadyCancelled: true,
+                msg: 'La compra ya había sido cancelada anteriormente.'
+            });
         }
 
         await connection.query(
